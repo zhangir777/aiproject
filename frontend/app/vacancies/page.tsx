@@ -63,9 +63,17 @@ export default function VacanciesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Вакансии</h1>
-        <p className="text-gray-500 text-sm mt-1">Актуальные вакансии с enbek.kz</p>
+      <div className="mb-2">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Вакансии</h1>
+        </div>
+        <p className="text-gray-500 text-sm">Актуальные вакансии с enbek.kz</p>
       </div>
 
       {/* Filters */}
