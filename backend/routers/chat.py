@@ -43,7 +43,7 @@ async def chat(request: ChatRequest):
     # Формируем контекст для AI
     context_text = ""
     if db_context.get("vacancy_count"):
-        context_text += f"\n📊 Данные из базы EnbekAI:"
+        context_text += f"\n[DATA] Данные из базы EnbekAI:"
         if profession:
             context_text += f"\n- Профессия: {profession}"
         if region:

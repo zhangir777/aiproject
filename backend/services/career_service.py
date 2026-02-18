@@ -17,7 +17,8 @@ class CareerService:
 
     async def get_profession_stats(self, specialty: str, region: str) -> dict:
         """Получить статистику по профессии и региону."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
 
             cur = await db.execute("""
@@ -74,7 +75,8 @@ class CareerService:
 
     async def get_alternatives(self, specialty: str, region: str) -> list[dict]:
         """Найти альтернативные профессии."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
 
             # Профессии с похожими навыками или из той же отрасли

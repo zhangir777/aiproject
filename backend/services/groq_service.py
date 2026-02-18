@@ -9,7 +9,7 @@ import logging
 from typing import Optional
 
 import aiosqlite
-from groq import Groq, RateLimitError, APIError
+from groq import AsyncGroq, RateLimitError, APIError
 
 from config import (
     GROQ_API_KEY,
@@ -73,7 +73,7 @@ class RateLimiter:
 
 class GroqService:
     def __init__(self):
-        self.client = Groq(api_key=GROQ_API_KEY)
+        self.client = AsyncGroq(api_key=GROQ_API_KEY)
         self.rate_limiter = RateLimiter(GROQ_MAX_REQUESTS_PER_MINUTE)
 
     def _hash_request(self, messages: list, model: str) -> str:
@@ -117,7 +117,7 @@ class GroqService:
 
         for attempt in range(GROQ_MAX_RETRIES):
             try:
-                response = self.client.chat.completions.create(
+                response = await self.client.chat.completions.create(
                     model=model,
                     messages=messages,
                     max_tokens=max_tokens,
