@@ -37,7 +37,8 @@ async def list_vacancies(
     where = "WHERE " + " AND ".join(where_clauses) if where_clauses else ""
     offset = (page - 1) * per_page
 
-    async with aiosqlite.connect(DATABASE_URL) as db:
+    async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+        await db.execute("PRAGMA journal_mode=WAL")
         db.row_factory = aiosqlite.Row
 
         # Общее количество
@@ -69,7 +70,8 @@ async def list_vacancies(
 @router.get("/industries")
 async def get_industries():
     """Список отраслей с количеством вакансий."""
-    async with aiosqlite.connect(DATABASE_URL) as db:
+    async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+        await db.execute("PRAGMA journal_mode=WAL")
         db.row_factory = aiosqlite.Row
         cur = await db.execute(
             "SELECT industry, COUNT(*) as count FROM vacancies "
@@ -88,9 +90,11 @@ async def get_skills(profession: Optional[str] = Query(None)):
         where = "WHERE LOWER(title) LIKE ? OR LOWER(normalized_title) LIKE ?"
         params = [f"%{profession.lower()}%", f"%{profession.lower()}%"]
 
-    async with aiosqlite.connect(DATABASE_URL) as db:
+    async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+        await db.execute("PRAGMA journal_mode=WAL")
         db.row_factory = aiosqlite.Row
-        cur = await db.execute(f"SELECT skills FROM vacancies {where} AND skills IS NOT NULL LIMIT 500", params)
+        skills_where = where + " AND skills IS NOT NULL" if where else "WHERE skills IS NOT NULL"
+        cur = await db.execute(f"SELECT skills FROM vacancies {skills_where} LIMIT 500", params)
         rows = await cur.fetchall()
 
         skill_counts: dict[str, int] = {}
@@ -113,7 +117,8 @@ async def get_skills(profession: Optional[str] = Query(None)):
 @router.get("/regions")
 async def get_regions():
     """Список регионов."""
-    async with aiosqlite.connect(DATABASE_URL) as db:
+    async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+        await db.execute("PRAGMA journal_mode=WAL")
         db.row_factory = aiosqlite.Row
         cur = await db.execute("SELECT * FROM regions ORDER BY name_ru")
         rows = await cur.fetchall()
