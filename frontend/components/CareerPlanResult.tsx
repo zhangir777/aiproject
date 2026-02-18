@@ -48,9 +48,9 @@ export default function CareerPlanResult({ result }: { result: CareerResult }) {
       {/* Plan */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Ваш карьерный план</h3>
-        <ReactMarkdown className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-li:text-gray-700">
-          {plan}
-        </ReactMarkdown>
+        <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-li:text-gray-700">
+          <ReactMarkdown>{plan}</ReactMarkdown>
+        </div>
       </div>
 
       {/* Alternatives */}

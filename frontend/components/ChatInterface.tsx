@@ -85,11 +85,9 @@ export default function ChatInterface() {
               }`}
             >
               {msg.role === 'assistant' ? (
-                <ReactMarkdown
-                  className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-a:text-blue-600"
-                >
-                  {msg.content}
-                </ReactMarkdown>
+                <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-a:text-blue-600">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
               ) : (
                 <p className="text-sm">{msg.content}</p>
               )}
