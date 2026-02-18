@@ -11,11 +11,11 @@ from routers import dashboard, chat, career, vacancies
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Инициализация при старте приложения."""
-    print("🚀 EnbekAI запускается...")
+    print("[START] EnbekAI starting...")
     await init_db()
-    print("✅ База данных готова")
+    print("[OK] Database ready")
     yield
-    print("👋 EnbekAI завершает работу")
+    print("[STOP] EnbekAI shutting down")
 
 
 app = FastAPI(

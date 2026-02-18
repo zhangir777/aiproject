@@ -102,7 +102,7 @@ async def init_db():
         if count == 0:
             await seed_regions(db)
             await db.commit()
-            print("✅ Регионы Казахстана загружены в БД")
+            print("[OK] Regions loaded")
 
 
 async def seed_regions(db):
@@ -137,4 +137,4 @@ async def seed_regions(db):
 
 if __name__ == "__main__":
     asyncio.run(init_db())
-    print("✅ База данных инициализирована")
+    print("[OK] Database initialized")

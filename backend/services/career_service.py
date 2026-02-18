@@ -114,13 +114,19 @@ class CareerService:
 
         groq = get_groq_service()
 
+        avg_salary_str = f"{stats['avg_salary']:,} T" if stats['avg_salary'] else 'нет данных'
+        alt_list = "\n".join([
+            f"- {a['title']}: {a['avg_salary']:,} T, {a['vacancy_count']} вакансий"
+            for a in alternatives[:3] if a['avg_salary']
+        ]) if alternatives else 'нет данных'
+
         context = f"""
 Данные из базы EnbekAI:
 - Специальность: {specialty}
 - Регион: {region}
 - Вакансий найдено: {stats['vacancy_count']}
-- Средняя зарплата: {stats['avg_salary']:,} ₸ если stats['avg_salary'] else 'нет данных'}
-- Диапазон зарплат: {stats['min_salary']} — {stats['max_salary']} ₸
+- Средняя зарплата: {avg_salary_str}
+- Диапазон зарплат: {stats['min_salary']} — {stats['max_salary']} T
 - Топ навыки для этой профессии: {', '.join(stats['top_skills']) if stats['top_skills'] else 'нет данных'}
 
 Данные пользователя:
@@ -128,7 +134,7 @@ class CareerService:
 - Опыт работы: {experience_years} лет
 
 Альтернативные профессии (из той же отрасли):
-{chr(10).join([f"- {a['title']}: {a['avg_salary']:,} ₸, {a['vacancy_count']} вакансий" for a in alternatives[:3]]) if alternatives else 'нет данных'}
+{alt_list}
 
 Составь персональный карьерный план согласно инструкции.
 """

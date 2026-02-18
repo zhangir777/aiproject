@@ -170,7 +170,7 @@ async def seed_vacancies(count: int = 1000):
         cur = await db.execute("SELECT COUNT(*) FROM vacancies")
         existing = (await cur.fetchone())[0]
         if existing > 0:
-            print(f"⚠️  В БД уже есть {existing} вакансий. Добавляем ещё {count}...")
+            print(f"[WARN] DB already has {existing} vacancies. Adding {count} more...")
 
         inserted = 0
         for i in range(count):
@@ -212,15 +212,15 @@ async def seed_vacancies(count: int = 1000):
                 pass  # Дубликат source_url
 
         await db.commit()
-        print(f"✅ Добавлено {inserted} вакансий в БД")
+        print(f"[OK] Added {inserted} vacancies to DB")
 
         # Обновляем статистику
         cur = await db.execute("SELECT COUNT(*) FROM vacancies")
         total = (await cur.fetchone())[0]
-        print(f"📊 Всего вакансий в БД: {total}")
+        print(f"[STAT] Total vacancies in DB: {total}")
 
 
 if __name__ == "__main__":
     count = int(sys.argv[1]) if len(sys.argv) > 1 else 1000
-    print(f"🌱 Заполнение БД тестовыми данными ({count} вакансий)...")
+    print(f"[SEED] Seeding DB with {count} test vacancies...")
     asyncio.run(seed_vacancies(count))
