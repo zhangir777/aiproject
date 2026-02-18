@@ -1,0 +1,7 @@
+frontend/
+node_modules/
+__pycache__/
+*.db
+.env
+.git/
+.next/
