@@ -17,7 +17,8 @@ class AnalyticsService:
 
     async def get_overview(self) -> dict:
         """Общая статистика по рынку труда."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
 
             # Всего вакансий
@@ -60,7 +61,8 @@ class AnalyticsService:
 
     async def get_map_data(self) -> list[dict]:
         """Данные для карты — статистика по регионам."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
 
             cur = await db.execute("""
@@ -100,7 +102,8 @@ class AnalyticsService:
 
     async def get_top_professions(self, region: Optional[str] = None, limit: int = 10) -> list[dict]:
         """Топ профессий по количеству вакансий."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
 
             where = "WHERE region = ?" if region else ""
@@ -131,7 +134,8 @@ class AnalyticsService:
 
     async def get_salary_by_region(self) -> list[dict]:
         """Зарплаты по регионам."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
 
             cur = await db.execute("""
@@ -157,7 +161,8 @@ class AnalyticsService:
 
     async def get_trends(self, months: int = 6) -> list[dict]:
         """Тренды вакансий за последние N месяцев."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
 
             # Генерируем список месяцев
@@ -183,7 +188,8 @@ class AnalyticsService:
 
     async def get_context_for_ai(self, region: Optional[str] = None, profession: Optional[str] = None) -> dict:
         """Получить данные из БД для контекста AI-чата."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             db.row_factory = aiosqlite.Row
             context = {}
 
@@ -216,8 +222,9 @@ class AnalyticsService:
 
             # Топ навыки
             if profession or region:
+                skills_where = where + " AND skills IS NOT NULL" if where else "WHERE skills IS NOT NULL"
                 cur2 = await db.execute(f"""
-                    SELECT skills FROM vacancies {where} AND skills IS NOT NULL LIMIT 50
+                    SELECT skills FROM vacancies {skills_where} LIMIT 50
                 """, params)
                 rows = await cur2.fetchall()
                 all_skills: dict[str, int] = {}
@@ -235,7 +242,8 @@ class AnalyticsService:
 
     async def update_market_stats(self):
         """Обновить агрегированную статистику в market_stats."""
-        async with aiosqlite.connect(DATABASE_URL) as db:
+        async with aiosqlite.connect(DATABASE_URL, timeout=30) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
             period = datetime.now().strftime("%Y-%m")
 
             # По регионам и профессиям
