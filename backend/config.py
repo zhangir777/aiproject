@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-DATABASE_URL = os.getenv("DATABASE_URL", "./data/enbek.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "/tmp/enbek.db")
 DEBUG = os.getenv("DEBUG", "false").lower() == "true"
 
 CORS_ORIGINS = os.getenv(
