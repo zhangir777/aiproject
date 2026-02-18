@@ -1,94 +1,83 @@
 """
-Поиск и анализ датасетов на data.egov.kz
-Запуск: python scripts/discover_datasets.py
+Поиск и анализ датасетов на data.egov.kz + загрузка статичных данных
+Запуск: py -X utf8 scripts/discover_datasets.py
 """
 import asyncio
-import json
 import sys
 import os
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-import httpx
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
 
-EGOV_BASE = "https://data.egov.kz/api/v4"
-HEADERS = {"User-Agent": "EnbekAI Research Bot/1.0"}
-
-# Датасеты для проверки
-DATASETS_TO_CHECK = [
-    "medorg",           # Медицинские организации
-    "universities",     # Университеты
-    "colleges",         # Колледжи
-    "graduates",        # Выпускники
-    "employment",       # Занятость
-    "labour",           # Рынок труда
-    "vacancies",        # Вакансии
-    "organizations",    # Организации
-    "population",       # Население
-    "regions",          # Регионы
-    "education",        # Образование
-    "schools",          # Школы
-    "salary",           # Зарплаты
-    "unemployment",     # Безработица
-]
-
-
-async def check_dataset(client: httpx.AsyncClient, name: str) -> dict | None:
-    """Проверить наличие и размер датасета."""
-    try:
-        url = f"{EGOV_BASE}/{name}/v1"
-        params = {"source": json.dumps({"size": 5})}
-        response = await client.get(url, params=params, timeout=10)
-
-        if response.status_code == 200:
-            data = response.json()
-            hits = data.get("hits", {})
-            total = hits.get("total", {})
-            if isinstance(total, dict):
-                total_count = total.get("value", 0)
-            else:
-                total_count = total or 0
-
-            sample = hits.get("hits", [])
-            sample_data = [h.get("_source", {}) for h in sample[:2]]
-
-            return {
-                "name": name,
-                "total": total_count,
-                "fields": list(sample_data[0].keys()) if sample_data else [],
-                "sample": sample_data[0] if sample_data else None,
-            }
-    except Exception as e:
-        pass
-    return None
+from database import init_db
+from services.egov_service import EgovService, KNOWN_DATASETS, STATIC_EDUCATION_DATA, STATIC_LABOUR_STATS
 
 
 async def main():
-    print("🔍 Поиск датасетов на data.egov.kz...")
+    print("=" * 60)
+    print("EnbekAI — data.egov.kz Dataset Discovery")
     print("=" * 60)
 
-    async with httpx.AsyncClient(headers=HEADERS) as client:
-        found = []
-        for ds_name in DATASETS_TO_CHECK:
-            result = await check_dataset(client, ds_name)
-            if result and result["total"] > 0:
-                found.append(result)
-                print(f"✅ {ds_name}: {result['total']} записей")
-                print(f"   Поля: {', '.join(result['fields'][:8])}")
-                if result["sample"]:
-                    print(f"   Пример: {str(result['sample'])[:150]}...")
-                print()
-            else:
-                print(f"❌ {ds_name}: недоступен")
+    await init_db()
+    svc = EgovService()
 
-            await asyncio.sleep(0.5)
+    try:
+        # Статус API ключа
+        if svc.has_api_key:
+            print("\n[OK] EGOV_API_KEY найден — проверяем датасеты...")
+            results = await svc.probe_all_datasets()
+            accessible = [r for r in results if r["accessible"]]
+            inaccessible = [r for r in results if not r["accessible"]]
 
-    print("=" * 60)
-    print(f"\n📊 Найдено {len(found)} доступных датасетов")
-    if found:
-        print("\nРелевантные датасеты:")
-        for ds in found:
-            print(f"  - {ds['name']}: {ds['total']} записей | {', '.join(ds['fields'][:5])}")
+            print(f"\nДоступны: {len(accessible)} датасетов")
+            for r in accessible:
+                print(f"  + {r['name']}: {r['description']}")
+                print(f"    Поля: {', '.join(r['fields'][:6])}")
+
+            if inaccessible:
+                print(f"\nНедоступны: {len(inaccessible)}")
+                for r in inaccessible:
+                    print(f"  - {r['name']}: {r['description']}")
+        else:
+            print("\n[WARN] EGOV_API_KEY не задан в .env")
+            print("  Для доступа к API: зарегистрируйтесь на data.egov.kz")
+            print("  и добавьте EGOV_API_KEY=ваш_ключ в backend/.env")
+            print()
+            print(f"  Известные датасеты ({len(KNOWN_DATASETS)}):")
+            for name, info in KNOWN_DATASETS.items():
+                print(f"    - {name}: {info['description']}")
+
+        # Всегда загружаем статичные данные
+        print("\n[DATA] Загрузка официальной статистики МОН РК и stat.gov.kz...")
+        count = await svc.seed_static_data()
+        print(f"  Образовательная статистика: {count} записей в БД")
+        print(f"  Данные по безработице: {len(STATIC_LABOUR_STATS)} регионов")
+        print()
+        print("  Покрытые регионы:")
+        regions = set(r for r, *_ in STATIC_EDUCATION_DATA)
+        for rg in sorted(regions):
+            print(f"    - {rg}")
+
+        print()
+        print("[STAT] Статистика безработицы 2024 (официальные данные):")
+        for region, rate, year in sorted(STATIC_LABOUR_STATS, key=lambda x: x[1]):
+            bar = "#" * int(rate)
+            print(f"  {region:<35} {rate:.1f}% {bar}")
+
+    finally:
+        await svc.close()
+
+    print("\n" + "=" * 60)
+    print("[OK] data.egov.kz клиент готов к работе")
 
 
 if __name__ == "__main__":
